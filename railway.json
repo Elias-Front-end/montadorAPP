@@ -1,0 +1,11 @@
+# Railway (Backend)
+# Crie um novo projeto no Railway e configure:
+
+# 1. Environment Variables
+DATABASE_URL=postgresql://postgres:password@postgres.railway.internal:5432/railway
+JWT_SECRET=montador-conecta-secret-key-producao
+FRONTEND_URL=https://montador-conecta.vercel.app
+
+# 2. Variables
+NODE_ENV=production
+PORT=4000

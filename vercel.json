@@ -1,0 +1,15 @@
+{
+  "build": {
+    "src": "backend",
+    "dist": "dist",
+    "install": "npm install",
+    "start": "npm run start:prod",
+    "test": "npm run build"
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "backend/dist/main.js"
+    }
+  ]
+}

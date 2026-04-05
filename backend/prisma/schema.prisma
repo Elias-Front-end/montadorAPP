@@ -1,0 +1,276 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  montador
+  empresa
+  admin
+}
+
+enum UserStatus {
+  pending
+  active
+  inactive
+  blocked
+}
+
+enum ServiceStatus {
+  pendente
+  em_execucao
+  finalizado
+  cancelado
+}
+
+enum ParticipationStatus {
+  pendente
+  aceito
+  recusado
+}
+
+enum ParticipationRole {
+  titular
+  auxiliar
+}
+
+enum BadgeLevel {
+  none
+  bronze
+  prata
+  ouro
+}
+
+enum PlanType {
+  basico
+  profissional
+  empresarial
+}
+
+enum SubscriptionStatus {
+  active
+  past_due
+  canceled
+  trialing
+}
+
+enum PeriodType {
+  mensal
+  anual
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  name         String
+  phone        String?
+  type         UserType
+  status       UserStatus @default(active)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  montadorProfile MontadorProfile?
+  company         Company?
+  subscriptions   Subscription[]
+  notifications   Notification[]
+
+  @@map("users")
+}
+
+model MontadorProfile {
+  id              String        @id @default(cuid())
+  userId          String        @unique @map("user_id")
+  cpf             String?
+  bio             String?
+  fotoPerfil      String?       @map("foto_perfil")
+  habilidades     String[]      @default([])
+  avaliacaoMedia  Float         @default(0) @map("avaliacao_media")
+  totalAvaliacoes Int           @default(0) @map("total_avaliacoes")
+  badge           BadgeLevel    @default(none)
+  disponibilidade Json?          @map("disponibilidade")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participants    ServiceParticipant[]
+  evaluations     Evaluation[]
+  calendar        Calendar[]
+  materialRequests MaterialRequest[]
+  invites         Invite[]      @relation("MontadorInvites")
+
+  @@map("montador_profiles")
+}
+
+model Company {
+  id              String   @id @default(cuid())
+  userId          String   @unique @map("user_id")
+  cnpj            String?
+  nomeFantasia    String?  @map("nome_fantasia")
+  razaoSocial     String?  @map("razao_social")
+  fotoLogo        String?  @map("foto_logo")
+  telefone        String?
+  endereco        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  services        Service[]
+  invites         Invite[]      @relation("CompanyInvites")
+  materialRequests MaterialRequest[]
+  evaluations     Evaluation[]
+
+  @@map("companies")
+}
+
+model Service {
+  id          String        @id @default(cuid())
+  companyId   String        @map("company_id")
+  titulo      String
+  descricao   String?
+  endereco    Json?
+  dataInicio  DateTime?     @map("data_inicio")
+  dataFim     DateTime?     @map("data_fim")
+  prazo       DateTime?
+  status      ServiceStatus @default(pendente)
+  valor       Decimal?      @db.Decimal(10, 2)
+  observacoes String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  company      Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  participants ServiceParticipant[]
+  evaluations  Evaluation[]
+  materialRequests MaterialRequest[]
+  calendar     Calendar[]
+  invites     Invite[]
+
+  @@map("services")
+}
+
+model ServiceParticipant {
+  id                    String            @id @default(cuid())
+  serviceId             String            @map("service_id")
+  montadorProfileId     String            @map("montador_profile_id")
+  role                  ParticipationRole @default(titular)
+  status                ParticipationStatus @default(pendente)
+  dataInicioExecucao    DateTime?         @map("data_inicio_execucao")
+  dataFimExecucao       DateTime?         @map("data_fim_execucao")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  service       Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  montadorProfile MontadorProfile @relation(fields: [montadorProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, montadorProfileId])
+  @@map("service_participants")
+}
+
+model Evaluation {
+  id         String   @id @default(cuid())
+  serviceId  String   @map("service_id")
+  montadorId String   @map("montador_id")
+  companyId  String   @map("company_id")
+  nota       Int
+  comentario String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  montadorProfile MontadorProfile @relation(fields: [montadorId], references: [id], onDelete: Cascade)
+  company       Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, montadorId])
+  @@map("evaluations")
+}
+
+model MaterialRequest {
+  id          String    @id @default(cuid())
+  serviceId   String    @map("service_id")
+  companyId   String    @map("company_id")
+  montadorId  String    @map("montador_id")
+  tipo        String    @default("material")
+  descricao   String
+  fotoUrl     String?   @map("foto_url")
+  status      String    @default("pendente")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  service       Service        @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  montadorProfile MontadorProfile @relation(fields: [montadorId], references: [id], onDelete: Cascade)
+
+  @@map("material_requests")
+}
+
+model Calendar {
+  id          String    @id @default(cuid())
+  montadorId  String    @map("montador_id")
+  serviceId   String?   @map("service_id")
+  data        DateTime
+  horaInicio  String?   @map("hora_inicio")
+  horaFim     String?   @map("hora_fim")
+  tipo        String    @default("agendamento")
+  titulo      String?
+  descricao   String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  montadorProfile MontadorProfile? @relation(fields: [montadorId], references: [id], onDelete: Cascade)
+  service         Service?          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("calendars")
+}
+
+model Invite {
+  id        String    @id @default(cuid())
+  companyId String    @map("company_id")
+  montadorId String   @map("montador_id")
+  tipo      String    @default("servico")
+  serviceId String?   @map("service_id")
+  status    String    @default("pendente")
+  mensagem  String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at")
+
+  company       Company        @relation("CompanyInvites", fields: [companyId], references: [id], onDelete: Cascade)
+  montadorProfile MontadorProfile @relation("MontadorInvites", fields: [montadorId], references: [id], onDelete: Cascade)
+  service       Service?      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, montadorId, serviceId])
+  @@map("invites")
+}
+
+model Subscription {
+  id           String            @id @default(cuid())
+  userId       String            @map("user_id")
+  plano        PlanType          @default(basico)
+  status       SubscriptionStatus @default(trialing)
+  startDate    DateTime          @map("start_date")
+  endDate      DateTime?         @map("end_date")
+  valor        Decimal           @db.Decimal(10, 2)
+  periodo      PeriodType        @default(mensal)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  titulo    String
+  mensagem  String
+  tipo      String   @default("sistema")
+  lida      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
