@@ -6,11 +6,11 @@ WORKDIR /app
 
 COPY backend/package.json backend/package-lock.json* ./backend/
 WORKDIR /app/backend
-RUN npm ci
+RUN npm install
 
 COPY frontend/package.json frontend/package-lock.json* ./frontend/
 WORKDIR /app/frontend
-RUN npm ci
+RUN npm install
 
 FROM base AS builder
 WORKDIR /app
