@@ -40,17 +40,20 @@ COPY --from=builder /app/backend/dist ./backend/dist
 COPY --from=builder /app/backend/package.json ./backend/package.json
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/prisma ./backend/prisma
+COPY --from=builder /app/backend/.env ./backend/.env
 
 COPY --from=builder /app/frontend/.next ./.next
 COPY --from=builder /app/frontend/package.json ./frontend/package.json
 COPY --from=builder /app/frontend/node_modules ./frontend/node_modules
 
+COPY --from=builder /app/package.json ./package.json
+
 USER Next.js
 
 EXPOSE 4000 3000
 
-WORKDIR /app/backend
+WORKDIR /app
 ENV PORT=4000
 ENV NODE_ENV=production
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod & cd ../frontend && npm start"]
+CMD ["sh", "-c", "cd backend && npx prisma migrate deploy && npm run start:prod & cd ../frontend && PORT=3000 npm start"]

@@ -1,0 +1,8 @@
+{
+  "name": "montador-conecta",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:prod": "sh -c 'cd backend && npm run start:prod & cd ../frontend && PORT=3000 npm start'"
+  }
+}
