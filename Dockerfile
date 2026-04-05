@@ -4,9 +4,6 @@ RUN apk add --no-cache libc6-compat
 FROM base AS deps
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
-
 COPY backend/package.json backend/package-lock.json* ./backend/
 WORKDIR /app/backend
 RUN npm ci
@@ -18,11 +15,11 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 
-COPY . .
+COPY backend ./backend
+COPY frontend ./frontend
 
 WORKDIR /app/backend
 RUN npx prisma generate
