@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { servicesService } from './services.service'
 import { prismaClient } from '../../database/connection'
 import { createServiceSchema, updateServiceSchema, inviteMontadorSchema } from './services.dto'
+
+class ServicesController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
       const input = createServiceSchema.parse(req.body)

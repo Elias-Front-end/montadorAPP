@@ -7,7 +7,7 @@ import { z } from 'zod'
 export class UsersController {
   async getMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await usersService.getMe(req.user!.id)
+      const user = await usersService.getMe(req.user!.userId)
       res.json({ success: true, data: user })
     } catch (error) {
       next(error)
@@ -16,7 +16,7 @@ export class UsersController {
 
   async updateMe(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await usersService.updateMe(req.user!.id, req.body)
+      const user = await usersService.updateMe(req.user!.userId, req.body)
       res.json({ success: true, data: user })
     } catch (error) {
       next(error)
@@ -26,7 +26,7 @@ export class UsersController {
   async updateMontadorProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const input = updateMontadorSchema.parse(req.body)
-      const profile = await usersService.updateMontadorProfile(req.user!.id, input)
+      const profile = await usersService.updateMontadorProfile(req.user!.userId, input)
       res.json({ success: true, data: profile })
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -1,7 +1,7 @@
 export const jwtConfig = {
   secret: process.env.JWT_SECRET || 'montador-conecta-secret-key',
-  accessTokenExpiry: '15m',
-  refreshTokenExpiry: '7d',
+  accessTokenExpiry: '15m' as const,
+  refreshTokenExpiry: '7d' as const,
   cookieName: 'refresh_token'
 }
 

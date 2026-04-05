@@ -22,7 +22,7 @@ export class EvaluationsService {
 
     const existingEvaluation = await prismaClient.evaluation.findUnique({
       where: {
-        service_montador_evaluation: {
+        serviceId_montadorId: {
           serviceId: input.serviceId,
           montadorId: input.montadorId,
         },
