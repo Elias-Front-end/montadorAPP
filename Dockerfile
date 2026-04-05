@@ -53,4 +53,4 @@ WORKDIR /app/backend
 ENV PORT=4000
 ENV NODE_ENV=production
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod & cd ../frontend && npm start"]
