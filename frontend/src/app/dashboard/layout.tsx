@@ -45,10 +45,20 @@ export default function DashboardLayout({
             </Link>
             
             <nav className="flex items-center gap-6">
-              {isEmpresa && (
-                <Link href="/dashboard/services" className="text-gray-600 hover:text-blue-600">
-                  Meus Serviços
+              {user.type === 'admin' && (
+                <Link href="/dashboard/admin" className="text-gray-600 hover:text-blue-600">
+                  Admin
                 </Link>
+              )}
+              {isEmpresa && (
+                <>
+                  <Link href="/dashboard/services" className="text-gray-600 hover:text-blue-600">
+                    Meus Serviços
+                  </Link>
+                  <Link href="/dashboard/team" className="text-gray-600 hover:text-blue-600">
+                    Meu Time
+                  </Link>
+                </>
               )}
               {isMontador && (
                 <>

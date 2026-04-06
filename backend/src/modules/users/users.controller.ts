@@ -3,6 +3,7 @@ import { usersService } from './users.service'
 import { authMiddleware } from '../../shared/decorators/auth.decorator'
 import { updateMontadorSchema } from './users.dto'
 import { z } from 'zod'
+import { prismaClient } from '../../database/connection'
 
 export class UsersController {
   async getMe(req: Request, res: Response, next: NextFunction) {
@@ -57,6 +58,37 @@ export class UsersController {
         badge: badge as string,
       })
       res.json({ success: true, data: montadores })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async getMyTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const company = await prismaClient.company.findUnique({ where: { userId: req.user!.userId } })
+      const team = await usersService.getMyTeam(company!.id)
+      res.json({ success: true, data: team })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async addToTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { montadorId } = req.body
+      const company = await prismaClient.company.findUnique({ where: { userId: req.user!.userId } })
+      await usersService.addToTeam(company!.id, montadorId)
+      res.json({ success: true, message: 'Montador adicionado ao time' })
+    } catch (error) {
+      next(error)
+    }
+  }
+
+  async removeFromTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const company = await prismaClient.company.findUnique({ where: { userId: req.user!.userId } })
+      await usersService.removeFromTeam(company!.id, req.params.montadorId)
+      res.json({ success: true, message: 'Montador removido do time' })
     } catch (error) {
       next(error)
     }

@@ -163,6 +163,75 @@ export class ServicesService {
       throw new AppError(400, 'DUPLICATE_INVITE', 'Convite já enviado para este montador')
     }
 
+    if (service.dataInicio && service.dataFim) {
+      const conflictingServices = await prismaClient.serviceParticipant.count({
+        where: {
+          montadorProfileId: input.montadorProfileId,
+          status: 'aceito',
+          service: {
+            OR: [
+              {
+                dataInicio: { lte: service.dataFim },
+                dataFim: { gte: service.dataInicio },
+              },
+            ],
+          },
+        },
+      })
+
+      if (conflictingServices > 0) {
+        throw new AppError(409, 'SCHEDULE_CONFLICT', 'O montador já possui um serviço agendado neste período')
+      }
+    }
+
+    const invite = await prismaClient.invite.create({
+      data: {
+        companyId,
+        montadorId: input.montadorProfileId,
+        tipo: input.tipo,
+        serviceId: input.tipo === 'servico' ? serviceId : null,
+        mensagem: input.mensagem,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    })
+
+    return invite
+  }
+
+    const existingInvite = await prismaClient.invite.findFirst({
+      where: {
+        companyId,
+        montadorId: input.montadorProfileId,
+        serviceId,
+        status: 'pendente',
+      },
+    })
+
+    if (existingInvite) {
+      throw new AppError(400, 'DUPLICATE_INVITE', 'Convite já enviado para este montador')
+    }
+
+    if (service.dataInicio && service.dataFim) {
+      const conflictingServices = await prismaClient.serviceParticipant.count({
+        where: {
+          montadorProfileId: input.montadorProfileId,
+          status: 'aceito',
+          service: {
+            OR: [
+              {
+                dataInicio: { lte: service.dataFim },
+                dataFim: { gte: service.dataInicio },
+              },
+            ],
+          },
+        },
+      })
+
+      if (conflictingServices > 0) {
+        throw new AppError(409, 'SCHEDULE_CONFLICT', 'O montador já possui um serviço agendado neste período')
+      }
+    }
+
     const invite = await prismaClient.invite.create({
       data: {
         companyId,
@@ -198,6 +267,7 @@ export class ServicesService {
   async respondToInvite(inviteId: string, montadorId: string, accept: boolean) {
     const invite = await prismaClient.invite.findFirst({
       where: { id: inviteId, montadorId },
+      include: { service: true },
     })
 
     if (!invite) {
@@ -206,6 +276,81 @@ export class ServicesService {
 
     if (invite.status !== 'pendente') {
       throw new AppError(400, 'INVALID_STATUS', 'Convite já respondedo')
+    }
+
+    if (accept && invite.service) {
+      const { dataInicio, dataFim } = invite.service
+
+      if (dataInicio && dataFim) {
+        const conflictingServices = await prismaClient.serviceParticipant.count({
+          where: {
+            montadorProfileId: montadorId,
+            status: 'aceito',
+            service: {
+              id: { not: invite.serviceId! },
+              OR: [
+                {
+                  dataInicio: { lte: dataFim },
+                  dataFim: { gte: dataInicio },
+                },
+              ],
+            },
+          },
+        })
+
+        if (conflictingServices > 0) {
+          throw new AppError(409, 'SCHEDULE_CONFLICT', 'Você já possui um serviço agendado neste período')
+        }
+      }
+    }
+
+    const updated = await prismaClient.invite.update({
+      where: { id: inviteId },
+      data: { status: accept ? 'aceito' : 'recusado' },
+    })
+
+    if (accept && invite.serviceId) {
+      await prismaClient.serviceParticipant.create({
+        data: {
+          serviceId: invite.serviceId,
+          montadorProfileId: montadorId,
+          role: 'titular',
+          status: 'aceito',
+        },
+      })
+    }
+
+    return updated
+  }
+
+    if (invite.status !== 'pendente') {
+      throw new AppError(400, 'INVALID_STATUS', 'Convite já respondedo')
+    }
+
+    if (accept && invite.service) {
+      const { dataInicio, dataFim } = invite.service
+
+      if (dataInicio && dataFim) {
+        const conflictingServices = await prismaClient.serviceParticipant.count({
+          where: {
+            montadorProfileId: montadorId,
+            status: 'aceito',
+            service: {
+              id: { not: invite.serviceId! },
+              OR: [
+                {
+                  dataInicio: { lte: dataFim },
+                  dataFim: { gte: dataInicio },
+                },
+              ],
+            },
+          },
+        })
+
+        if (conflictingServices > 0) {
+          throw new AppError(409, 'SCHEDULE_CONFLICT', 'Você já possui um serviço agendado neste período')
+        }
+      }
     }
 
     const updated = await prismaClient.invite.update({

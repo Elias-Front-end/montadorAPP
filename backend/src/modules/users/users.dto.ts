@@ -14,6 +14,12 @@ export const updateMontadorSchema = z.object({
   fotoPerfil: z.string().url().optional(),
   habilidades: z.array(z.string()).optional(),
   disponibilidade: z.any().optional(),
+  qualificacoes: z.array(z.object({
+    nome: z.string(),
+    instituicao: z.string(),
+    ano: z.number().optional(),
+    certificadoUrl: z.string().url().optional(),
+  })).optional(),
 })
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

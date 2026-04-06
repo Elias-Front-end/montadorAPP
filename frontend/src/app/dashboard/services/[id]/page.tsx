@@ -49,6 +49,22 @@ export default function ServiceDetailPage() {
   const [evaluation, setEvaluation] = useState({ nota: 5, comentario: '' })
   const [showMaterial, setShowMaterial] = useState(false)
   const [material, setMaterial] = useState({ tipo: 'material', descricao: '' })
+  const [showEdit, setShowEdit] = useState(false)
+  const [editData, setEditData] = useState({
+    titulo: '',
+    descricao: '',
+    valor: '',
+    prazo: '',
+    observacoes: '',
+  })
+  const [showEdit, setShowEdit] = useState(false)
+  const [editData, setEditData] = useState({
+    titulo: '',
+    descricao: '',
+    valor: '',
+    prazo: '',
+    observacoes: '',
+  })
 
   useEffect(() => {
     fetchService()
@@ -142,6 +158,87 @@ export default function ServiceDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir este serviço?')) return
+    try {
+      await api.delete(`/services/${params.id}`)
+      router.push('/dashboard/services')
+    } catch (error: any) {
+      alert(error.response?.data?.error?.message || 'Erro ao excluir serviço')
+    }
+  }
+
+  const handleEdit = async () => {
+    try {
+      await api.patch(`/services/${params.id}`, {
+        ...editData,
+        valor: editData.valor ? Number(editData.valor) : undefined,
+      })
+      setShowEdit(false)
+      fetchService()
+      alert('Serviço atualizado!')
+    } catch (error: any) {
+      alert(error.response?.data?.error?.message || 'Erro ao atualizar serviço')
+    }
+  }
+
+  const openEditModal = () => {
+    if (!service) return
+    setEditData({
+      titulo: service.titulo,
+      descricao: service.descricao || '',
+      valor: service.valor?.toString() || '',
+      prazo: service.prazo ? service.prazo.slice(0, 16) : '',
+      observacoes: service.observacoes || '',
+    })
+    setShowEdit(true)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir este serviço?')) return
+    try {
+      await api.delete(`/services/${params.id}`)
+      router.push('/dashboard/services')
+    } catch (error: any) {
+      alert(error.response?.data?.error?.message || 'Erro ao excluir serviço')
+    }
+  }
+  }
+
+  const openEditModal = () => {
+    if (!service) return
+    setEditData({
+      titulo: service.titulo,
+      descricao: service.descricao || '',
+      valor: service.valor?.toString() || '',
+      prazo: service.prazo ? service.prazo.slice(0, 16) : '',
+      observacoes: service.observacoes || '',
+    })
+    setShowEdit(true)
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Tem certeza que deseja excluir este serviço?')) return
+    try {
+      await api.delete(`/services/${params.id}`)
+      router.push('/dashboard/services')
+    } catch (error: any) {
+      alert(error.response?.data?.error?.message || 'Erro ao excluir serviço')
+    }
+  }
+
+  const openEditModal = () => {
+    if (!service) return
+    setEditData({
+      titulo: service.titulo,
+      descricao: service.descricao || '',
+      valor: service.valor?.toString() || '',
+      prazo: service.prazo ? service.prazo.slice(0, 16) : '',
+      observacoes: service.observacoes || '',
+    })
+    setShowEdit(true)
+  }
+
   const isMontador = user?.type === 'montador'
   const isEmpresa = user?.type === 'empresa'
 
@@ -168,12 +265,26 @@ export default function ServiceDetailPage() {
             </span>
           </div>
           {isEmpresa && service.status === 'pendente' && (
-            <button
-              onClick={() => { setShowInvite(true); fetchMontadores() }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Convidar Montador
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={openEditModal}
+                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200"
+              >
+                Editar
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200"
+              >
+                Excluir
+              </button>
+              <button
+                onClick={() => { setShowInvite(true); fetchMontadores() }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              >
+                Convidar Montador
+              </button>
+            </div>
           )}
         </div>
 
@@ -413,6 +524,70 @@ export default function ServiceDetailPage() {
                 Enviar Solicitação
               </button>
               <button onClick={() => setShowMaterial(false)} className="flex-1 border py-2 rounded-lg">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Editar Serviço</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Título</label>
+                <input
+                  type="text"
+                  value={editData.titulo}
+                  onChange={(e) => setEditData({ ...editData, titulo: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Descrição</label>
+                <textarea
+                  value={editData.descricao}
+                  onChange={(e) => setEditData({ ...editData, descricao: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Valor (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editData.valor}
+                  onChange={(e) => setEditData({ ...editData, valor: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Prazo</label>
+                <input
+                  type="datetime-local"
+                  value={editData.prazo}
+                  onChange={(e) => setEditData({ ...editData, prazo: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Observações</label>
+                <textarea
+                  value={editData.observacoes}
+                  onChange={(e) => setEditData({ ...editData, observacoes: e.target.value })}
+                  className="w-full px-4 py-2 border rounded-lg"
+                  rows={2}
+                />
+              </div>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button onClick={handleEdit} className="flex-1 bg-blue-600 text-white py-2 rounded-lg">
+                Salvar
+              </button>
+              <button onClick={() => setShowEdit(false)} className="flex-1 border py-2 rounded-lg">
                 Cancelar
               </button>
             </div>

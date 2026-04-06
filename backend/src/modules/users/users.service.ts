@@ -31,7 +31,7 @@ export class UsersService {
     return this.sanitizeUser(user)
   }
 
-  async updateMontadorProfile(userId: string, input: UpdateMontadorInput) {
+   async updateMontadorProfile(userId: string, input: UpdateMontadorInput) {
     const profile = await prismaClient.montadorProfile.findUnique({
       where: { userId },
     })
@@ -48,6 +48,7 @@ export class UsersService {
         fotoPerfil: input.fotoPerfil,
         habilidades: input.habilidades,
         disponibilidade: input.disponibilidade,
+        qualificacoes: input.qualificacoes as any,
       },
     })
 
@@ -121,6 +122,62 @@ export class UsersService {
     })
 
     return montadores
+  }
+
+  async getMyTeam(companyId: string) {
+    const team = await prismaClient.companyTeam.findMany({
+      where: { companyId },
+      include: {
+        montadorProfile: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return team.map((t) => t.montadorProfile)
+  }
+
+  async addToTeam(companyId: string, montadorId: string) {
+    const existing = await prismaClient.companyTeam.findUnique({
+      where: {
+        companyId_montadorId: {
+          companyId,
+          montadorId,
+        },
+      },
+    })
+
+    if (existing) {
+      throw new AppError(400, 'ALREADY_IN_TEAM', 'Montador já está no time')
+    }
+
+    await prismaClient.companyTeam.create({
+      data: {
+        companyId,
+        montadorId,
+      },
+    })
+  }
+
+  async removeFromTeam(companyId: string, montadorId: string) {
+    await prismaClient.companyTeam.delete({
+      where: {
+        companyId_montadorId: {
+          companyId,
+          montadorId,
+        },
+      },
+    })
   }
 
   private sanitizeUser(user: any) {
